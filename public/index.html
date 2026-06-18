@@ -229,14 +229,19 @@ async function loadMenu(){
 }
 
 function buildTabs(){
-  const cats = ['ALL', ...new Set(allItems.map(i=>i.category))];
+  // Define fixed category order
+  const catOrder = ['ALL','COFFEE','TEA','SMOOTHIE','MILK','CHOCOLATE','BREAD','SUB_SANDWICH','SANDWICH'];
+  const available = new Set(allItems.map(i=>i.category));
+  const cats = catOrder.filter(c => c==='ALL' || available.has(c));
   const container = document.getElementById('cat-tabs');
-  container.innerHTML = cats.map(c=>`<button class="cat-tab${c==='ALL'?' active':''}" onclick="filterCat('${c}')">${c==='ALL'?'🐾 全部':(CAT_LABELS[c]||c)}</button>`).join('');
+  container.innerHTML = cats.map(c=>`<button class="cat-tab${c==='ALL'?' active':''}" data-cat="${c}" onclick="filterCat('${c}')">${c==='ALL'?'🐾 全部':(CAT_LABELS[c]||c)}</button>`).join('');
 }
 
 function filterCat(cat){
   currentCat = cat;
-  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.toggle('active',t.textContent.includes(cat==='ALL'?'全部':(CAT_LABELS[cat]||cat))||cat==='ALL'&&t.textContent.includes('全部')));
+  document.querySelectorAll('.cat-tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.cat === cat);
+  });
   renderCards(cat);
 }
 

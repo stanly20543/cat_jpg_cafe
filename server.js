@@ -44,8 +44,7 @@ async function initDB() {
 }
 
 function seedIfEmpty() {
-  const count = db.exec("SELECT COUNT(*) as n FROM menu_items")[0]?.values[0][0];
-  if (count > 0) return;
+  // Use INSERT OR IGNORE so data is always filled in even after redeployment
   const items = [
     ['c1','COFFEE','義式黑咖啡','Espresso',85,'純粹義式濃縮，感受咖啡豆最原始的風味層次，苦中帶有焦糖回甘。','','[]',1,1],
     ['c2','COFFEE','蜂蜜柚子黑咖啡','Honey Yuzu Espresso',105,'清爽柚子香氣與天然蜂蜜甜味，搭配義式濃縮別有一番風味。','','[]',1,2],
@@ -93,7 +92,7 @@ function seedIfEmpty() {
     ['sw4','SANDWICH','半熟蛋培根','Soft Egg Bacon Sandwich',105,'流心半熟蛋搭配培根，早午餐的完美選擇。','','[]',1,4],
     ['sw5','SANDWICH','雞肉培根','Chicken Bacon Sandwich',130,'嫩煎雞肉與培根雙重享受，飽足感滿分。','','[]',1,5],
   ];
-  const stmt = db.prepare(`INSERT INTO menu_items (id,category,name_zh,name_en,price,description,image_url,badges,is_available,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)`);
+  const stmt = db.prepare(`INSERT OR IGNORE INTO menu_items (id,category,name_zh,name_en,price,description,image_url,badges,is_available,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)`);
   items.forEach(i => stmt.run(i));
   stmt.free();
 
@@ -110,7 +109,7 @@ function seedIfEmpty() {
   settings.forEach(([k,v]) => ss.run([k,v]));
   ss.free();
   db.save();
-  console.log('✅ Seed data inserted');
+  console.log('✅ Seed data synced');
 }
 
 function queryAll(sql, params=[]) {
