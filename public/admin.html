@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>後台管理 · 貓圖咖啡</title>
+  <style>
+    :root{--g:#C8702A;--dg:#8B4A1A;--wood:#3E2410;--mid:#6B3D1A;--cream:#F2EBD9;--fur:#F7F2EA;--mist:#E5DDD0;--sage:#7B8C6A;--red:#c0392b;--green:#27ae60}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f1ec;color:var(--wood);min-height:100vh}
+    /* LOGIN */
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--wood)}
+    .login-box{background:var(--fur);padding:3rem;border-radius:8px;width:360px;text-align:center}
+    .login-box h1{font-size:1.4rem;margin-bottom:.4rem;color:var(--wood)}
+    .login-box p{font-size:.82rem;color:rgba(62,36,16,.5);margin-bottom:2rem}
+    /* LAYOUT */
+    .app{display:none;min-height:100vh}
+    .sidebar{width:240px;background:var(--wood);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column}
+    .sidebar-logo{padding:1.8rem 1.5rem;border-bottom:1px solid rgba(247,242,234,.08)}
+    .sidebar-logo h2{font-size:1rem;color:var(--fur);letter-spacing:.08em}
+    .sidebar-logo p{font-size:.72rem;color:rgba(247,242,234,.4);margin-top:.2rem}
+    .sidebar-nav{flex:1;padding:1rem 0}
+    .nav-item{display:flex;align-items:center;gap:.8rem;padding:.85rem 1.5rem;color:rgba(247,242,234,.55);text-decoration:none;font-size:.85rem;transition:all .2s;cursor:pointer;border:none;background:transparent;width:100%;text-align:left}
+    .nav-item:hover,.nav-item.active{background:rgba(200,112,42,.15);color:var(--fur)}
+    .nav-item.active{border-right:3px solid var(--g)}
+    .nav-icon{font-size:1rem;width:20px;text-align:center}
+    .sidebar-footer{padding:1rem 1.5rem;border-top:1px solid rgba(247,242,234,.08)}
+    .logout-btn{color:rgba(247,242,234,.4);font-size:.78rem;cursor:pointer;background:none;border:none;padding:.4rem 0;width:100%;text-align:left;transition:color .2s}
+    .logout-btn:hover{color:var(--fur)}
+    .main{margin-left:240px;padding:2rem;min-height:100vh}
+    .page{display:none}
+    .page.active{display:block}
+    .page-header{margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+    .page-title{font-size:1.5rem;font-weight:600;color:var(--wood)}
+    .page-sub{font-size:.82rem;color:rgba(62,36,16,.5);margin-top:.2rem}
+    /* CARDS / STATS */
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1.2rem;margin-bottom:2.5rem}
+    .stat-card{background:var(--fur);border-radius:8px;padding:1.4rem;border:1px solid var(--mist)}
+    .stat-val{font-size:2rem;font-weight:700;color:var(--g)}
+    .stat-label{font-size:.78rem;color:rgba(62,36,16,.55);margin-top:.3rem}
+    /* TABLE */
+    .table-wrap{background:var(--fur);border-radius:8px;border:1px solid var(--mist);overflow:hidden}
+    .table-toolbar{padding:1rem 1.4rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--mist)}
+    .search-box{flex:1;min-width:180px;padding:.6rem 1rem;border:1px solid var(--mist);border-radius:4px;font-size:.85rem;background:var(--cream);outline:none}
+    .search-box:focus{border-color:var(--g)}
+    .cat-filter{padding:.6rem 1rem;border:1px solid var(--mist);border-radius:4px;font-size:.85rem;background:var(--cream);outline:none;cursor:pointer}
+    table{width:100%;border-collapse:collapse}
+    th{padding:.9rem 1.2rem;text-align:left;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(62,36,16,.5);border-bottom:1px solid var(--mist);white-space:nowrap}
+    td{padding:.9rem 1.2rem;font-size:.88rem;border-bottom:1px solid rgba(229,221,208,.5);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(200,112,42,.04)}
+    .item-thumb{width:44px;height:44px;border-radius:4px;background:var(--mist);object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0}
+    .item-thumb img{width:100%;height:100%;object-fit:cover}
+    .item-info{display:flex;align-items:center;gap:.8rem}
+    .item-name{font-weight:500}
+    .item-name-en{font-size:.75rem;color:rgba(62,36,16,.45);font-style:italic}
+    .badge{display:inline-block;font-size:.65rem;padding:.15rem .5rem;border-radius:2px;background:rgba(200,112,42,.12);color:var(--g);margin:.1rem}
+    .badge.avail{background:rgba(39,174,96,.12);color:var(--green)}
+    .badge.unavail{background:rgba(192,57,43,.1);color:var(--red)}
+    .price{font-weight:600;color:var(--g)}
+    .action-btns{display:flex;gap:.4rem;white-space:nowrap}
+    /* BUTTONS */
+    .btn{padding:.55rem 1.1rem;border:none;border-radius:4px;font-size:.82rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.4rem}
+    .btn-primary{background:var(--g);color:#fff}.btn-primary:hover{background:var(--dg)}
+    .btn-secondary{background:var(--mist);color:var(--mid)}.btn-secondary:hover{background:var(--cream)}
+    .btn-danger{background:rgba(192,57,43,.1);color:var(--red)}.btn-danger:hover{background:rgba(192,57,43,.2)}
+    .btn-sm{padding:.35rem .8rem;font-size:.78rem}
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(3px)}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:#fff;border-radius:10px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;position:relative}
+    .modal-head{padding:1.5rem 1.8rem;border-bottom:1px solid var(--mist);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+    .modal-head h3{font-size:1.1rem;color:var(--wood)}
+    .modal-body{padding:1.8rem}
+    .modal-foot{padding:1.2rem 1.8rem;border-top:1px solid var(--mist);display:flex;justify-content:flex-end;gap:.8rem;position:sticky;bottom:0;background:#fff}
+    .close-btn{background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(62,36,16,.4);padding:.2rem}
+    .close-btn:hover{color:var(--wood)}
+    /* FORM */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .form-group{margin-bottom:1.2rem}
+    .form-group.full{grid-column:1/-1}
+    label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.04em;color:rgba(62,36,16,.6);margin-bottom:.4rem;text-transform:uppercase}
+    input,select,textarea{width:100%;padding:.65rem .9rem;border:1.5px solid var(--mist);border-radius:4px;font-size:.88rem;color:var(--wood);background:var(--cream);outline:none;transition:border .2s;font-family:inherit}
+    input:focus,select:focus,textarea:focus{border-color:var(--g)}
+    textarea{resize:vertical;min-height:90px}
+    .img-upload-area{border:2px dashed var(--mist);border-radius:6px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .3s;position:relative}
+    .img-upload-area:hover{border-color:var(--g);background:rgba(200,112,42,.04)}
+    .img-upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
+    .img-preview{width:100%;max-height:160px;object-fit:cover;border-radius:4px;margin-top:.8rem;display:none}
+    .img-url-input{margin-top:.8rem}
+    /* TOAST */
+    .toast{position:fixed;bottom:2rem;right:2rem;background:var(--wood);color:var(--fur);padding:.9rem 1.5rem;border-radius:6px;font-size:.85rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s;max-width:300px}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{background:var(--green)}
+    .toast.error{background:var(--red)}
+    /* SETTINGS PAGE */
+    .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+    .settings-card{background:var(--fur);border-radius:8px;border:1px solid var(--mist);padding:2rem}
+    .settings-card h3{font-size:1rem;margin-bottom:1.5rem;padding-bottom:.8rem;border-bottom:1px solid var(--mist);color:var(--wood)}
+    /* TOGGLE */
+    .toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--mist);border-radius:22px;transition:.3s}
+    .toggle-slider:before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+    .toggle input:checked+.toggle-slider{background:var(--g)}
+    .toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
+    .inline-toggle{display:flex;align-items:center;gap:.8rem}
+    /* IMAGE MANAGER */
+    .img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem}
+    .img-item{background:var(--fur);border:1px solid var(--mist);border-radius:6px;overflow:hidden;position:relative}
+    .img-item img{width:100%;height:120px;object-fit:cover;display:block}
+    .img-item-info{padding:.7rem}
+    .img-item-info p{font-size:.75rem;color:rgba(62,36,16,.6);word-break:break-all}
+    .img-del{position:absolute;top:.4rem;right:.4rem;background:rgba(192,57,43,.85);color:#fff;border:none;border-radius:4px;padding:.2rem .5rem;font-size:.72rem;cursor:pointer}
+    @media(max-width:768px){.sidebar{display:none}.main{margin-left:0}.settings-grid,.form-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-page">
+  <div class="login-box">
+    <h1>🐱 貓圖咖啡</h1>
+    <p>後台管理系統</p>
+    <div class="form-group">
+      <label>管理員密碼</label>
+      <input type="password" id="pw-input" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:.8rem" onclick="doLogin()">登入</button>
+    <p style="margin-top:1rem;font-size:.75rem;color:rgba(62,36,16,.4)">預設密碼：catcafe2024</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>🐱 貓圖咖啡</h2>
+      <p>後台管理系統</p>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>總覽</button>
+      <button class="nav-item" onclick="showPage('menu')"><span class="nav-icon">🍽</span>菜單管理</button>
+      <button class="nav-item" onclick="showPage('images')"><span class="nav-icon">🖼</span>圖片管理</button>
+      <button class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span>網站設定</button>
+      <a class="nav-item" href="index.html" target="_blank"><span class="nav-icon">🔗</span>查看前台</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">← 登出</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div><div class="page-title">總覽</div><div class="page-sub">貓圖咖啡後台管理</div></div>
+      </div>
+      <div class="stat-grid" id="stats"></div>
+      <div class="table-wrap">
+        <div style="padding:1rem 1.4rem;font-weight:600;font-size:.9rem;border-bottom:1px solid var(--mist)">最近更新的品項</div>
+        <table><thead><tr><th>品名</th><th>分類</th><th>售價</th><th>狀態</th></tr></thead>
+        <tbody id="recent-items"></tbody></table>
+      </div>
+    </div>
+
+    <!-- MENU -->
+    <div class="page" id="page-menu">
+      <div class="page-header">
+        <div><div class="page-title">菜單管理</div><div class="page-sub">新增、編輯、刪除菜單品項</div></div>
+        <button class="btn btn-primary" onclick="openItemModal()">＋ 新增品項</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <input class="search-box" placeholder="🔍 搜尋品名..." oninput="filterMenu()" id="menu-search">
+          <select class="cat-filter" onchange="filterMenu()" id="cat-select">
+            <option value="">所有分類</option>
+            <option value="COFFEE">☕ 咖啡</option>
+            <option value="TEA">🍵 茶飲</option>
+            <option value="SMOOTHIE">🥤 貓咬冰</option>
+            <option value="MILK">🥛 鮮奶</option>
+            <option value="CHOCOLATE">🍫 巧克力</option>
+            <option value="BREAD">🍞 厚片</option>
+            <option value="SUB_SANDWICH">🥖 潛艇堡</option>
+            <option value="SANDWICH">🥪 三明治</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr><th>品項</th><th>分類</th><th>售價</th><th>標籤</th><th>狀態</th><th>操作</th></tr></thead>
+          <tbody id="menu-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- IMAGES -->
+    <div class="page" id="page-images">
+      <div class="page-header">
+        <div><div class="page-title">圖片管理</div><div class="page-sub">上傳首頁圖片、菜單品項圖片</div></div>
+        <button class="btn btn-primary" onclick="document.getElementById('global-img-upload').click()">＋ 上傳圖片</button>
+        <input type="file" id="global-img-upload" accept="image/*" style="display:none" onchange="uploadGlobalImage(this)">
+      </div>
+      <div class="table-wrap" style="padding:1.5rem;margin-bottom:1.5rem">
+        <h3 style="font-size:.95rem;margin-bottom:1rem;color:var(--mid)">首頁圖片</h3>
+        <div class="form-group">
+          <label>替換英雄區塊圖片（點擊上傳）</label>
+          <div class="img-upload-area" onclick="document.getElementById('hero-img-upload').click()">
+            <input type="file" id="hero-img-upload" accept="image/*" onchange="uploadHeroImage(this)">
+            <div>📸 點擊選擇圖片（建議尺寸 1200×900）</div>
+            <img id="hero-preview" class="img-preview">
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap" style="padding:1.5rem">
+        <h3 style="font-size:.95rem;margin-bottom:1.2rem;color:var(--mid)">已上傳圖片庫</h3>
+        <div class="img-grid" id="img-gallery"><p style="color:rgba(62,36,16,.4);font-size:.85rem">尚未上傳任何圖片</p></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div><div class="page-title">網站設定</div><div class="page-sub">修改首頁文案、聯絡資訊</div></div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 儲存設定</button>
+      </div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>🏠 首頁文案</h3>
+          <div class="form-group"><label>店名</label><input id="s-site_name" placeholder="貓圖咖啡"></div>
+          <div class="form-group"><label>副標題</label><input id="s-site_subtitle" placeholder="CAT.jpg cafe"></div>
+          <div class="form-group"><label>英雄區塊文案</label><textarea id="s-hero_sub" rows="3"></textarea></div>
+        </div>
+        <div class="settings-card">
+          <h3>📍 聯絡資訊</h3>
+          <div class="form-group"><label>地址</label><input id="s-address"></div>
+          <div class="form-group"><label>電話</label><input id="s-phone"></div>
+          <div class="form-group"><label>週一～五營業時間</label><input id="s-hours_weekday"></div>
+          <div class="form-group"><label>週六～日營業時間</label><input id="s-hours_weekend"></div>
+        </div>
+        <div class="settings-card">
+          <h3>🔗 社群連結</h3>
+          <div class="form-group"><label>Facebook</label><input id="s-facebook_url" placeholder="https://..."></div>
+          <div class="form-group"><label>Instagram</label><input id="s-instagram_url" placeholder="https://..."></div>
+          <div class="form-group"><label>Line@</label><input id="s-line_url" placeholder="https://..."></div>
+        </div>
+        <div class="settings-card">
+          <h3>🔒 安全設定</h3>
+          <div class="form-group"><label>目前密碼</label><input type="password" id="s-old-pw" placeholder="輸入目前密碼"></div>
+          <div class="form-group"><label>新密碼</label><input type="password" id="s-new-pw" placeholder="輸入新密碼（留空不更改）"></div>
+          <button class="btn btn-secondary" onclick="changePassword()">更新密碼</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ITEM MODAL -->
+<div class="modal-overlay" id="item-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-title">新增品項</h3>
+      <button class="close-btn" onclick="closeItemModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>品項圖片</label>
+          <div class="img-upload-area" onclick="document.getElementById('item-img-file').click()">
+            <input type="file" id="item-img-file" accept="image/*" onchange="previewItemImg(this)">
+            <div id="item-upload-hint">📷 點擊上傳圖片</div>
+            <img id="item-img-preview" class="img-preview">
+          </div>
+          <div class="img-url-input">
+            <label style="margin-top:.6rem">或貼上圖片網址</label>
+            <input id="f-image_url" placeholder="https://..." oninput="syncImgUrl(this.value)">
+          </div>
+        </div>
+        <div class="form-group"><label>中文名稱 *</label><input id="f-name_zh" placeholder="義式黑咖啡"></div>
+        <div class="form-group"><label>英文名稱</label><input id="f-name_en" placeholder="Espresso"></div>
+        <div class="form-group">
+          <label>分類 *</label>
+          <select id="f-category">
+            <option value="COFFEE">☕ 咖啡</option>
+            <option value="TEA">🍵 茶飲</option>
+            <option value="SMOOTHIE">🥤 貓咬冰</option>
+            <option value="MILK">🥛 鮮奶</option>
+            <option value="CHOCOLATE">🍫 巧克力</option>
+            <option value="BREAD">🍞 厚片</option>
+            <option value="SUB_SANDWICH">🥖 潛艇堡</option>
+            <option value="SANDWICH">🥪 三明治</option>
+          </select>
+        </div>
+        <div class="form-group"><label>售價 (NT$) *</label><input id="f-price" type="number" placeholder="100"></div>
+        <div class="form-group full"><label>品項描述</label><textarea id="f-description" placeholder="介紹這道飲品的風味、特色..."></textarea></div>
+        <div class="form-group full"><label>標籤（逗號分隔，如：限冰飲,*含酒精）</label><input id="f-badges" placeholder="限冰飲,*含酒精"></div>
+        <div class="form-group"><label>排序</label><input id="f-sort_order" type="number" placeholder="0" value="0"></div>
+        <div class="form-group">
+          <label>供應狀態</label>
+          <div class="inline-toggle">
+            <label class="toggle"><input type="checkbox" id="f-is_available" checked><span class="toggle-slider"></span></label>
+            <span id="avail-label">供應中</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeItemModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveItem()">💾 儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:3000/api'
+  : window.location.origin + '/api';
+const CAT = {COFFEE:'☕ 咖啡',TEA:'🍵 茶飲',SMOOTHIE:'🥤 貓咬冰',MILK:'🥛 鮮奶',CHOCOLATE:'🍫 巧克力',BREAD:'🍞 厚片',SUB_SANDWICH:'🥖 潛艇堡',SANDWICH:'🥪 三明治'};
+const EMOJI = {COFFEE:'☕',TEA:'🍵',SMOOTHIE:'🥤',MILK:'🥛',CHOCOLATE:'🍫',BREAD:'🍞',SUB_SANDWICH:'🥖',SANDWICH:'🥪'};
+let token = localStorage.getItem('cat_admin_token');
+let allItems = [], editingId = null, uploadedItemImg = null;
+
+// AUTH
+if(token){ showApp(); }
+
+async function doLogin(){
+  const pw = document.getElementById('pw-input').value;
+  try{
+    const r = await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    const d = await r.json();
+    if(d.ok){ token=d.token; localStorage.setItem('cat_admin_token',token); showApp(); }
+    else showToast('密碼錯誤','error');
+  }catch(e){ showToast('無法連線到伺服器，請確認後端已啟動','error'); }
+}
+
+function showApp(){
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('app').style.display='flex';
+  loadDashboard(); loadMenuTable(); loadSettings(); loadGallery();
+}
+function logout(){ localStorage.removeItem('cat_admin_token'); token=null; location.reload(); }
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// DASHBOARD
+async function loadDashboard(){
+  try{
+    const items = await fetch(API+'/menu').then(r=>r.json());
+    allItems = items;
+    const cats = [...new Set(items.map(i=>i.category))];
+    document.getElementById('stats').innerHTML = [
+      {val:items.length,label:'總品項數'},
+      {val:items.filter(i=>i.is_available).length,label:'供應中'},
+      {val:cats.length,label:'分類數'},
+      {val:items.filter(i=>!i.is_available).length,label:'暫停供應'},
+    ].map(s=>`<div class="stat-card"><div class="stat-val">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join('');
+    document.getElementById('recent-items').innerHTML = items.slice(0,8).map(i=>`
+      <tr><td><div class="item-info">
+        <div class="item-thumb">${i.image_url?`<img src="${i.image_url}" onerror="this.style.display='none'">`:''}${EMOJI[i.category]||'🍽'}</div>
+        <div><div class="item-name">${i.name_zh}</div><div class="item-name-en">${i.name_en||''}</div></div>
+      </div></td>
+      <td><span class="badge">${CAT[i.category]||i.category}</span></td>
+      <td class="price">NT$ ${i.price}</td>
+      <td><span class="badge ${i.is_available?'avail':'unavail'}">${i.is_available?'供應中':'暫停'}</span></td></tr>`).join('');
+  }catch(e){ console.error(e); }
+}
+
+// MENU TABLE
+async function loadMenuTable(){
+  try{
+    allItems = await fetch(API+'/menu').then(r=>r.json());
+    renderMenuTable(allItems);
+  }catch(e){ document.getElementById('menu-table').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--red)">⚠️ 無法載入，請確認伺服器</td></tr>'; }
+}
+
+function renderMenuTable(items){
+  document.getElementById('menu-table').innerHTML = items.length ? items.map(i=>`
+    <tr>
+      <td><div class="item-info">
+        <div class="item-thumb">${i.image_url?`<img src="${i.image_url}" onerror="this.style.display='none'">`:''}<span>${EMOJI[i.category]||'🍽'}</span></div>
+        <div><div class="item-name">${i.name_zh}</div><div class="item-name-en">${i.name_en||''}</div></div>
+      </div></td>
+      <td><span class="badge">${CAT[i.category]||i.category}</span></td>
+      <td class="price">NT$ ${i.price}</td>
+      <td>${(i.badges||[]).map(b=>`<span class="badge">${b}</span>`).join('')||'—'}</td>
+      <td><label class="toggle" title="點擊切換" onclick="toggleAvail('${i.id}',${i.is_available},event)">
+        <input type="checkbox" ${i.is_available?'checked':''} readonly>
+        <span class="toggle-slider"></span></label></td>
+      <td><div class="action-btns">
+        <button class="btn btn-sm btn-secondary" onclick="openItemModal('${i.id}')">✏️ 編輯</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteItem('${i.id}','${i.name_zh}')">🗑</button>
+      </div></td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:2rem;color:rgba(62,36,16,.4)">沒有符合的品項</td></tr>';
+}
+
+function filterMenu(){
+  const q = document.getElementById('menu-search').value.toLowerCase();
+  const cat = document.getElementById('cat-select').value;
+  renderMenuTable(allItems.filter(i=>{
+    const matchQ = !q || i.name_zh.includes(q) || (i.name_en||'').toLowerCase().includes(q);
+    const matchC = !cat || i.category===cat;
+    return matchQ && matchC;
+  }));
+}
+
+async function toggleAvail(id, current, e){
+  e.stopPropagation();
+  const item = allItems.find(i=>i.id===id);
+  if(!item) return;
+  item.is_available = item.is_available ? 0 : 1;
+  await fetch(API+'/menu/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(item)});
+  showToast(item.is_available ? '已設為供應中' : '已設為暫停供應');
+  loadMenuTable();
+}
+
+async function deleteItem(id, name){
+  if(!confirm(`確定要刪除「${name}」？此動作無法復原。`)) return;
+  await fetch(API+'/menu/'+id,{method:'DELETE'});
+  showToast('已刪除 '+name);
+  loadDashboard(); loadMenuTable();
+}
+
+// ITEM MODAL
+function openItemModal(id=null){
+  editingId = id;
+  uploadedItemImg = null;
+  document.getElementById('item-img-preview').style.display='none';
+  document.getElementById('item-upload-hint').style.display='block';
+  if(id){
+    const item = allItems.find(i=>i.id===id);
+    if(!item) return;
+    document.getElementById('modal-title').textContent='編輯品項';
+    document.getElementById('f-name_zh').value=item.name_zh;
+    document.getElementById('f-name_en').value=item.name_en||'';
+    document.getElementById('f-category').value=item.category;
+    document.getElementById('f-price').value=item.price;
+    document.getElementById('f-description').value=item.description||'';
+    document.getElementById('f-badges').value=(item.badges||[]).join(',');
+    document.getElementById('f-sort_order').value=item.sort_order||0;
+    document.getElementById('f-is_available').checked=!!item.is_available;
+    document.getElementById('f-image_url').value=item.image_url||'';
+    if(item.image_url){
+      const prev=document.getElementById('item-img-preview');
+      prev.src=item.image_url; prev.style.display='block';
+      document.getElementById('item-upload-hint').style.display='none';
+    }
+  } else {
+    document.getElementById('modal-title').textContent='新增品項';
+    ['f-name_zh','f-name_en','f-description','f-badges','f-image_url'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-price').value='';
+    document.getElementById('f-sort_order').value='0';
+    document.getElementById('f-is_available').checked=true;
+    document.getElementById('f-category').value='COFFEE';
+  }
+  document.getElementById('item-modal').classList.add('open');
+}
+
+function closeItemModal(){ document.getElementById('item-modal').classList.remove('open'); editingId=null; uploadedItemImg=null; }
+document.getElementById('item-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeItemModal()});
+
+function previewItemImg(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async e=>{
+    const dataUrl = e.target.result;
+    try{
+      const r = await fetch(API+'/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dataUrl})});
+      const d = await r.json();
+      uploadedItemImg = d.url;
+      document.getElementById('f-image_url').value=d.url;
+      const prev=document.getElementById('item-img-preview');
+      prev.src=dataUrl; prev.style.display='block';
+      document.getElementById('item-upload-hint').style.display='none';
+      showToast('圖片上傳成功');
+    }catch(e){ showToast('圖片上傳失敗','error'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function syncImgUrl(url){
+  const prev=document.getElementById('item-img-preview');
+  if(url){prev.src=url;prev.style.display='block';document.getElementById('item-upload-hint').style.display='none';}
+  else{prev.style.display='none';document.getElementById('item-upload-hint').style.display='block';}
+}
+
+document.getElementById('f-is_available').addEventListener('change',function(){
+  document.getElementById('avail-label').textContent=this.checked?'供應中':'暫停供應';
+});
+
+async function saveItem(){
+  const data = {
+    category: document.getElementById('f-category').value,
+    name_zh: document.getElementById('f-name_zh').value.trim(),
+    name_en: document.getElementById('f-name_en').value.trim(),
+    price: parseInt(document.getElementById('f-price').value)||0,
+    description: document.getElementById('f-description').value.trim(),
+    image_url: document.getElementById('f-image_url').value.trim(),
+    badges: document.getElementById('f-badges').value.split(',').map(b=>b.trim()).filter(Boolean),
+    is_available: document.getElementById('f-is_available').checked?1:0,
+    sort_order: parseInt(document.getElementById('f-sort_order').value)||0,
+  };
+  if(!data.name_zh){ showToast('請填寫品項名稱','error'); return; }
+  if(!data.price){ showToast('請填寫售價','error'); return; }
+  try{
+    if(editingId){
+      await fetch(API+'/menu/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      showToast('品項已更新 ✓','success');
+    } else {
+      await fetch(API+'/menu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      showToast('品項已新增 ✓','success');
+    }
+    closeItemModal();
+    loadDashboard(); loadMenuTable();
+  }catch(e){ showToast('儲存失敗','error'); }
+}
+
+// IMAGES
+async function loadGallery(){
+  try{
+    const imgs = await fetch(API+'/gallery').then(r=>r.json());
+    const grid = document.getElementById('img-gallery');
+    if(!imgs.length){ grid.innerHTML='<p style="color:rgba(62,36,16,.4);font-size:.85rem">尚未上傳任何圖片</p>'; return; }
+    grid.innerHTML = imgs.map(i=>`
+      <div class="img-item">
+        <img src="${i.url}" alt="${i.alt||''}">
+        <button class="img-del" onclick="deleteGalleryImg('${i.id}')">✕</button>
+        <div class="img-item-info"><p>${i.url}</p></div>
+      </div>`).join('');
+  }catch(e){}
+}
+
+async function uploadGlobalImage(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async e=>{
+    try{
+      const r = await fetch(API+'/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dataUrl:e.target.result})});
+      const d = await r.json();
+      await fetch(API+'/gallery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:d.url,section:'gallery'})});
+      showToast('圖片上傳成功 ✓','success');
+      loadGallery();
+    }catch(e){ showToast('上傳失敗','error'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadHeroImage(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async e=>{
+    try{
+      const r = await fetch(API+'/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dataUrl:e.target.result})});
+      const d = await r.json();
+      const prev = document.getElementById('hero-preview');
+      prev.src=e.target.result; prev.style.display='block';
+      await fetch(API+'/settings/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hero_image:d.url})});
+      await fetch(API+'/gallery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:d.url,section:'hero'})});
+      showToast('首頁圖片已更新 ✓','success');
+      loadGallery();
+    }catch(e){ showToast('上傳失敗','error'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function deleteGalleryImg(id){
+  if(!confirm('確定刪除此圖片？')) return;
+  await fetch(API+'/gallery/'+id,{method:'DELETE'});
+  showToast('已刪除');
+  loadGallery();
+}
+
+// SETTINGS
+async function loadSettings(){
+  try{
+    const s = await fetch(API+'/settings').then(r=>r.json());
+    const fields=['site_name','site_subtitle','hero_sub','address','phone','hours_weekday','hours_weekend','facebook_url','instagram_url','line_url'];
+    fields.forEach(k=>{const el=document.getElementById('s-'+k);if(el&&s[k])el.value=s[k];});
+  }catch(e){}
+}
+
+async function saveSettings(){
+  const fields=['site_name','site_subtitle','hero_sub','address','phone','hours_weekday','hours_weekend','facebook_url','instagram_url','line_url'];
+  const data={};
+  fields.forEach(k=>{const el=document.getElementById('s-'+k);if(el)data[k]=el.value;});
+  try{
+    await fetch(API+'/settings/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    showToast('設定已儲存 ✓','success');
+  }catch(e){ showToast('儲存失敗','error'); }
+}
+
+async function changePassword(){
+  const oldPw=document.getElementById('s-old-pw').value;
+  const newPw=document.getElementById('s-new-pw').value;
+  if(!oldPw||!newPw){ showToast('請填入目前密碼和新密碼','error'); return; }
+  try{
+    const check = await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:oldPw})});
+    if(!check.ok){ showToast('目前密碼錯誤','error'); return; }
+    await fetch(API+'/settings/batch',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_password:newPw})});
+    showToast('密碼已更新 ✓','success');
+    document.getElementById('s-old-pw').value='';
+    document.getElementById('s-new-pw').value='';
+  }catch(e){ showToast('更新失敗','error'); }
+}
+
+// TOAST
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(type||'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body></html>
